@@ -1,0 +1,76 @@
+{% extends 'base.html' %}{% block c %}
+{% macro ico(n) %}<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{% if n=='box' %}<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/>{% elif n=='mov' %}<path d="M7 17V5M7 5L3 9M7 5l4 4"/><path d="M17 7v12M17 19l-4-4M17 19l4-4"/>{% elif n=='kardex' %}<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>{% elif n=='estado' %}<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>{% elif n=='imp' %}<path d="M12 16V4M12 4L7 9M12 4l5 5"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/>{% elif n=='db' %}<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>{% elif n=='bell' %}<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>{% endif %}</svg>{% endmacro %}
+{% set saludo = 'Buenos días' if hora < 12 else 'Buenas tardes' if hora < 18 else 'Buenas noches' %}
+<div class="hero"><div><span class="hero-tag">{{ fecha_hoy }}</span><h1>{{ saludo }}, {{ u.nombre }}</h1>
+<p class="hero-p">Tu inventario valuado con <b>PEPS</b>, <b>UEPS</b> y <b>promedio ponderado</b>, lado a lado.</p>
+<div class="hero-chips">{% if alertas|length %}<a class="chip-act" href="{{ url_for('inventario') }}">{{ alertas|length }} alerta{{ 's' if alertas|length > 1 }} por revisar</a>{% endif %}
+{% if ent + sal == 0 and puede('movimientos') %}<a class="chip-act" href="{{ url_for('movimientos', nueva='entrada') }}">Hoy aún no registras movimientos: empieza aquí</a>{% elif ent + sal %}<span class="chip-act">{{ ent }} entrada{{ 's' if ent != 1 }} y {{ sal }} salida{{ 's' if sal != 1 }} hoy</span>{% endif %}</div></div>
+<div><div class="hero-metodos">{% for k in ORDEN %}<a class="hm {{ 'on' if k==metodo }}" style="--c:{{ COLORES[k] }}" href="{{ url_for('inicio', metodo=k) }}" title="Valuar todo el sistema con {{ NOMBRES[k] }}"><small>{{ NOMBRES[k] }}{% if k==metodo %} · en uso{% endif %}</small><b>{{ M }}{{ '{:,.2f}'.format(comp[k].valor) }}</b><em>Costo de ventas {{ M }}{{ '{:,.2f}'.format(comp[k].costo) }}</em></a>{% endfor %}</div>
+<p class="hero-hint">Toca un método para valuar todo el sistema con él.</p></div></div>
+
+<div class="tiles">
+<a class="tile c1" href="{{ url_for('inventario') }}"><span class="th">{{ ico('box') }}<b>Inventario</b></span><small>Existencia, precio y total de cada producto.</small><span class="stat">{{ inv|length }} productos · {{ M }}{{ '{:,.2f}'.format(valor) }}</span></a>
+<a class="tile c2" href="{{ url_for('movimientos') }}"><span class="th">{{ ico('mov') }}<b>Entradas y salidas</b></span><small>Con cantidad, precio y total; las salidas se valúan solas.</small><span class="stat">{{ ent }} entradas · {{ sal }} salidas hoy</span></a>
+<a class="tile c3" href="{{ url_for('kardex') }}"><span class="th">{{ ico('kardex') }}<b>Kardex por lotes</b></span><small>PEPS y UEPS separan cada salida lote por lote.</small><span class="stat">Excel, PDF e impresión</span></a>
+<a class="tile c4" href="{{ url_for('reportes', r='estado') }}"><span class="th">{{ ico('estado') }}<b>Estado de resultados</b></span><small>Costo de ventas e inventario final con los tres métodos.</small><span class="stat">Compara PEPS, UEPS y promedio</span></a>
+{% if puede('importar') %}<a class="tile c1" href="{{ url_for('importar') }}"><span class="th">{{ ico('imp') }}<b>Importar sin plantilla</b></span><small>Excel, PDF, fotos o texto libre como una frase.</small><span class="stat">Sin encabezados ni formato fijo</span></a>{% endif %}
+{% if u.rol=='superadmin' %}<a class="tile c2" href="{{ url_for('base') }}"><span class="th">{{ ico('db') }}<b>Base de datos</b></span><small>Filtros, tabla dinámica y copia de seguridad.</small><span class="stat">Control total de tus datos</span></a>{% endif %}
+
+<section class="alert-hero">
+<div class="ah-top"><span class="th">{{ ico('bell') }}<b>Alertas</b></span><span class="ah-pill n-{{ estatus.nivel }}">{{ estatus.texto }}</span></div>
+<p class="ah-sub">{{ estatus.detalle }}</p>
+<div class="ah-meter"><i style="width:{{ estatus.pct }}%"></i></div><small class="ah-pct">{{ estatus.pct }}% del inventario en orden</small>
+<div class="ah-list">{% for p in alertas[:2] %}{% set e = ESTADO[p.estado] %}<div class="ah-row"><div><span class="ah-name">{{ p.nombre }}</span><em>{% if p.estado == 'bajo' %}Existencia {{ '{:g}'.format(p.existencia) }} · faltan {{ '{:g}'.format(p.stock_minimo - p.existencia) }} para el mínimo ({{ '{:g}'.format(p.stock_minimo) }}){% elif p.estado == 'agotado' %}Sin existencia · mínimo {{ '{:g}'.format(p.stock_minimo) }}{% else %}Existencia negativa ({{ '{:g}'.format(p.existencia) }}): revisa las salidas{% endif %}</em></div><span class="b {{ e[1] }}">{{ e[0] }}</span></div>
+{% else %}<div class="ah-ok">Sin alertas: todo tu inventario tiene existencia suficiente.</div>{% endfor %}</div>
+{% if alertas|length > 2 %}<a class="ah-more" href="{{ url_for('inventario') }}">+{{ alertas|length - 2 }} alerta{{ 's' if alertas|length - 2 > 1 }} más · Ver inventario</a>{% endif %}
+<div class="ah-actions">
+<button type="button" class="ah-btn" data-pane="exp" aria-expanded="false"><span>Métodos y rotación</span>{% if lenta %}<span class="ah-badge" title="Productos que superaron el tiempo estimado">{{ lenta|length }}</span>{% endif %}<svg class="ah-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+<button type="button" class="ah-btn" data-pane="rep" aria-expanded="false"><span>Reposición sugerida</span>{% if repo %}<span class="ah-badge" title="Productos a reponer">{{ repo|length }}</span>{% endif %}<svg class="ah-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
+</section>
+</div>
+<div class="ah-expand" id="ah-expand" hidden>
+<div class="ah-pane" data-pane="exp" hidden><div class="pane-head"><h3>Métodos y rotación del stock</h3><button type="button" class="lnk ah-cerrar">Cerrar</button></div><div class="pane-2"><div><div class="ph"><h3>Información de cada método</h3><span style="font-size:12px;color:var(--txt2)">En uso: {{ NOMBRES[metodo] }}</span></div>
+<table><thead><tr><th>Método</th><th class="num">Valor del inventario</th><th class="num">Costo de ventas</th><th class="num">Dif. de valor</th></tr></thead><tbody>
+{% for k in ORDEN %}{% set d = comp[k].valor - comp[metodo].valor %}<tr><td><b>{{ NOMBRES[k] }}</b>{% if k==metodo %} <span class="b ok">en uso</span>{% endif %}</td><td class="num">{{ M }}{{ '{:,.2f}'.format(comp[k].valor) }}</td><td class="num">{{ M }}{{ '{:,.2f}'.format(comp[k].costo) }}</td><td class="num">{% if k==metodo %}–{% else %}{{ '+' if d >= 0 }}{{ M }}{{ '{:,.2f}'.format(d) }}{% endif %}</td></tr>{% endfor %}</tbody></table>
+</div><div><div class="ph"><h3>Rotación del stock</h3><span style="font-size:12px;color:var(--txt2)">Tiempo estimado: {{ dias }} días</span></div>
+{% for x in lenta[:3] %}<div class="rot-row"><div class="rot-top"><b>{{ x.nombre }}</b><span class="b low">{{ x.edad }} días en stock</span></div>
+<p>Superó los {{ x.estimado }} días estimados. Quedan {{ '{:g}'.format(x.existencia) }} u ({{ M }}{{ '{:,.2f}'.format(x.valor) }}); se han vendido {{ '{:g}'.format(x.vendidas) }} u{% if x.ultima is not none %} y la última venta fue hace {{ x.ultima }} días{% endif %}.</p>
+<p class="rot-sug"><b>Sugerencia:</b> prioriza su venta o aplica una promoción para liberar ese valor.</p></div>
+{% else %}<div class="vacio" style="padding:14px 6px">Ningún producto ha superado los {{ dias }} días estimados en inventario.</div>{% endfor %}
+{% if lenta|length > 3 %}<p style="font-size:12px;color:var(--txt2);margin:6px 0 0">+{{ lenta|length - 3 }} producto{{ 's' if lenta|length - 3 > 1 }} más con baja rotación.</p>{% endif %}
+{% if puede('empresa') %}<p style="margin:10px 0 0"><a class="lnk" href="{{ url_for('configuracion') }}">Cambiar el tiempo estimado</a></p>{% endif %}</div></div></div>
+<div class="ah-pane" data-pane="rep" hidden><div class="pane-head"><h3>Reposición sugerida</h3><button type="button" class="lnk ah-cerrar">Cerrar</button></div>
+<p class="sub" style="margin:0 0 12px">Para cada producto en alerta se sugiere comprar lo necesario para llegar al <b>doble de su mínimo</b>, valorado con su último costo de compra.</p>
+{% if repo %}<table><thead><tr><th>Producto</th><th class="num">Existencia</th><th class="num">Mínimo</th><th class="num">Reponer</th><th class="num">Último costo</th><th class="num">Inversión</th><th></th></tr></thead><tbody>
+{% for x in repo %}{% set e = ESTADO[x.estado] %}<tr><td><b>{{ x.nombre }}</b> <span class="b {{ e[1] }}">{{ e[0] }}</span></td><td class="num">{{ '{:g}'.format(x.existencia) }}</td><td class="num">{{ '{:g}'.format(x.minimo) }}</td><td class="num"><b>{{ x.sugerido }}</b></td><td class="num">{% if x.costo %}{{ M }}{{ '{:,.2f}'.format(x.costo) }}{% else %}–{% endif %}</td><td class="num">{% if x.inversion %}{{ M }}{{ '{:,.2f}'.format(x.inversion) }}{% else %}–{% endif %}</td>
+<td>{% if puede('movimientos') %}<a class="lnk" href="{{ url_for('movimientos', nueva='entrada', pid=x.id, cant=x.sugerido) }}">Registrar entrada</a>{% endif %}</td></tr>{% endfor %}</tbody>
+<tfoot><tr class="tot"><td colspan="5">Inversión estimada</td><td class="num">{{ M }}{{ '{:,.2f}'.format(repo_total) }}</td><td></td></tr></tfoot></table>
+{% else %}<div class="vacio">Todos los productos están por encima de su mínimo: no hace falta reponer.</div>{% endif %}</div>
+</div>
+
+
+{% set ok = inv|selectattr('estado','eq','ok')|list|length %}{% set bj = inv|selectattr('estado','eq','bajo')|list|length %}{% set ag = inv|selectattr('estado','in',['agotado','negativo'])|list|length %}{% set tot = ok + bj + ag %}
+{% if tot %}<div class="linea-estado"><div class="le-head"><b>Estado del inventario</b><span>{{ estatus.pct }}% en orden · <i class="dot" style="background:var(--verde)"></i>{{ ok }} disponibles <i class="dot" style="background:var(--warn)"></i>{{ bj }} stock bajo <i class="dot" style="background:var(--rojo)"></i>{{ ag }} agotados</span></div>
+<div class="le-bar">{% if ok %}<i style="width:{{ (ok/tot*100)|round }}%;background:var(--verde)"></i>{% endif %}{% if bj %}<i style="width:{{ (bj/tot*100)|round }}%;background:var(--warn)"></i>{% endif %}{% if ag %}<i style="width:{{ (ag/tot*100)|round }}%;background:var(--rojo)"></i>{% endif %}</div></div>{% endif %}
+
+<div class="mas-row">
+<section class="gcard"><div class="gc-top"><span class="gc-t">Productos registrados</span><span class="ah-pill">{{ resumen_p.con_stock }} con stock</span></div>
+<div class="gc-big">{{ inv|length }}</div><p class="ah-sub">{{ resumen_p.con_stock }} con existencia y {{ inv|length - resumen_p.con_stock }} sin existencia.</p>
+<div class="g-row"><span>Unidades en existencia</span><b>{{ '{:,.0f}'.format(resumen_p.unidades) }}</b></div>
+<div class="g-row"><span>Más valioso</span><b>{% if resumen_p.top_valor %}{{ resumen_p.top_valor[0] }} · {{ M }}{{ '{:,.0f}'.format(resumen_p.top_valor[1]) }}{% else %}–{% endif %}</b></div>
+<div class="g-row"><span>Más vendido</span><b>{% if resumen_p.top_vendido %}{{ resumen_p.top_vendido[0] }} · {{ '{:g}'.format(resumen_p.top_vendido[1]) }} u{% else %}–{% endif %}</b></div></section>
+<section class="gcard"><div class="gc-top"><span class="gc-t">Estado del inventario</span><span class="ah-pill n-{{ estatus.nivel }}">{{ estatus.texto }}</span></div>
+<div class="gc-big">{{ estatus.pct }}%</div><p class="ah-sub">{{ estatus.detalle }}</p>
+{% for etq, color, nombres in grupos %}<div class="g-row"><span><i class="dot" style="background:{{ color }}"></i>{{ nombres|length }} {{ etq }}</span><b>{{ nombres[:3]|join(', ') or '–' }}{% if nombres|length > 3 %} +{{ nombres|length - 3 }}{% endif %}</b></div>{% endfor %}</section>
+<section class="gcard gcard-graf"><div class="gc-top"><span class="gc-t">Valor en los últimos movimientos</span></div>
+{% if graf_m %}<div class="gtabs">{% for k in ORDEN %}<button type="button" data-k="{{ k }}" class="{{ 'on' if k==metodo }}"><i style="border-color:{{ COLORES[k] }}"></i>{{ NOMBRES[k] }}</button>{% endfor %}</div>
+{% for k in ORDEN %}{% set e = stats_m[k] %}<div class="gm" data-k="{{ k }}" {{ '' if k==metodo else 'hidden' }}><div class="serie-top"><b>{{ M }}{{ '{:,.2f}'.format(e.ult) }}</b><span class="delta {{ 'up' if e.var >= 0 else 'down' }}">{{ '+' if e.var >= 0 }}{{ M }}{{ '{:,.2f}'.format(e.var) }} desde el primer registro</span></div>
+<p class="ah-sub">{{ NOMBRES[k] }} · máx. {{ M }}{{ '{:,.0f}'.format(e.max) }} · mín. {{ M }}{{ '{:,.0f}'.format(e.min) }} · {{ nfechas }} fecha{{ 's' if nfechas != 1 }} con movimientos</p>{{ graf_m[k] }}</div>{% endfor %}
+{% else %}<div class="gc-big" style="font-size:18px">Sin datos aún</div><p class="ah-sub">Registra movimientos para ver cómo cambia el valor con cada método.</p>{% endif %}</section></div>
+
+
+<script>const caja=document.getElementById('ah-expand'),bots=document.querySelectorAll('.ah-btn');
+function abrir(k){const ya=!caja.hidden&&caja.dataset.cur===k;caja.hidden=ya;caja.dataset.cur=ya?'':k;caja.querySelectorAll('.ah-pane').forEach(p=>p.hidden=p.dataset.pane!==k);bots.forEach(b=>{const on=!ya&&b.dataset.pane===k;b.classList.toggle('on',on);b.setAttribute('aria-expanded',on)});if(!ya&&caja.scrollIntoView)caja.scrollIntoView({behavior:'smooth',block:'nearest'})}
+bots.forEach(b=>b.onclick=()=>abrir(b.dataset.pane));document.querySelectorAll('.ah-cerrar').forEach(b=>b.onclick=()=>abrir(caja.dataset.cur));
+document.querySelectorAll('.gtabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.gtabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.gm').forEach(g=>g.hidden=g.dataset.k!==b.dataset.k)})</script>
+{% endblock %}

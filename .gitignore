@@ -1,0 +1,17 @@
+# Base de datos local: tiene datos reales y usuarios (nunca se sube; se crea sola al arrancar)
+*.db
+*.db-journal
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

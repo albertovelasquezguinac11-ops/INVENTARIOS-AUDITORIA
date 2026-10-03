@@ -1,0 +1,14 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Iniciar sesión – {{ EMPRESA }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body class="t-{{ tema }}">
+<div class="login"><div class="lp"><div class="lp-bg"><i></i><i></i><i></i></div>
+<div class="lp-in"><div class="brand"><span class="logo-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>{{ EMPRESA }}</div>
+<h1>Controla tu inventario con claridad</h1><p>Valúa con PEPS, UEPS y promedio ponderado al mismo tiempo, y compara cómo cambia tu costo de ventas.</p>
+<div class="lp-chips"><span>PEPS</span><span>UEPS</span><span>Promedio ponderado</span></div>
+<div class="lp-cards"><div><b>Kardex por lotes</b><small>Cada salida separada lote por lote.</small></div><div><b>Importa lo que tengas</b><small>Excel, PDF, fotos o texto libre.</small></div><div><b>Estado de resultados</b><small>Los tres métodos lado a lado.</small></div></div></div></div>
+<div class="rp"><form class="card lg" method="post"><span class="logo-mark lg-mark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
+<h2>Bienvenido de nuevo</h2><p class="sub">Ingresa con tu usuario para continuar.</p>
+{% for c, m in get_flashed_messages(with_categories=true) %}<div class="flash {{ c }}">{{ m }}</div>{% endfor %}
+<label for="u">Usuario</label><input id="u" name="username" autofocus required autocomplete="username" placeholder="Tu usuario">
+<label for="p">Contraseña</label><div class="pw"><input id="p" name="password" type="password" required autocomplete="current-password" placeholder="Tu contraseña"><button type="button" id="ver" aria-label="Mostrar u ocultar la contraseña">Mostrar</button></div>
+<button class="btn">Entrar</button><p class="lg-foot">¿Olvidaste tu contraseña? Pide al superadmin que la restablezca.</p></form></div></div>
+<script>const p=document.getElementById('p'),v=document.getElementById('ver');v.onclick=()=>{const o=p.type=='password';p.type=o?'text':'password';v.textContent=o?'Ocultar':'Mostrar'}</script></body></html>

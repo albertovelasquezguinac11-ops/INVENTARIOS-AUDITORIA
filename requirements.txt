@@ -1,0 +1,9 @@
+flask
+pandas
+openpyxl
+python-docx
+pdfplumber
+pdf2image
+pytesseract
+Pillow
+reportlab

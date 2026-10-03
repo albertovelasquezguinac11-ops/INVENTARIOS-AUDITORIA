@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block t %}{{ EMPRESA }}{% endblock %}</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body class="t-{{ tema }}">
+<nav class="noprint"><span class="logo">{{ EMPRESA }}</span>
+
+ <div class="menu burger-menu"><a class="burger-btn" title="Menú" aria-label="Abrir el menú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menú</span></a>
+  <div class="drop burger-drop">
+   {% for ep, n in (('inicio','Inicio'),('inventario','Inventario'),('movimientos','Movimientos'),('kardex','Kardex'),('reportes','Reportes')) %}<a href="{{ url_for(ep) }}" class="{{ 'cur' if request.endpoint == ep }}">{{ n }}</a>{% endfor %}
+   {% if puede('importar') %}<a href="{{ url_for('importar') }}">Importar</a>{% endif %}
+   {% if u.rol=='superadmin' or puede('empresa') or u.rol=='superadmin' %}<div class="drop-sep">Administración</div>{% if u.rol=='superadmin' %}<a href="{{ url_for('base') }}">Base de datos</a>{% endif %}{% if puede('empresa') %}<a href="{{ url_for('configuracion') }}">Empresa y apariencia</a>{% endif %}{% if u.rol=='superadmin' %}<a href="{{ url_for('usuarios') }}">Usuarios y roles</a>{% endif %}{% endif %}
+  </div></div>
+<span class="nav-pag">{{ pagina }}</span>
+ 
+ <div class="nav-r">{% if usa_metodo %}<span class="seg" title="Método de valuación">{% for k, n in NOMBRES.items() %}<a class="{{ 'on' if k==metodo }}" title="{{ n }}" href="{{ url_for(request.endpoint, **dict(request.args.to_dict(), metodo=k)) }}">{{ 'PROM.' if k=='promedio' else k|upper }}</a>{% endfor %}</span>{% endif %}
+  <button title="Notificaciones" onclick="var n=document.getElementById('notif');n.style.display=n.style.display=='block'?'none':'block'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> {{ notifs|length }}</button>
+  <a href="{{ url_for('cuenta') }}" class="who" style="color:#fff;text-decoration:none" title="Cambiar mi contraseña"><b>{{ u.nombre }}</b>{{ u.rol }}</a><a class="salir" href="{{ url_for('logout') }}">Salir</a>
+  <div id="notif">{% for p in notifs[:6] %}<div><b>{{ ESTADO[p.estado][0] }}</b><small>{{ p.nombre }}: {{ '{:,.0f}'.format(p.existencia) }} en existencia</small></div>{% else %}<div>Sin alertas por ahora.</div>{% endfor %}</div></div></nav>
+<main class="{% block mainclass %}{% endblock %}">{% for c, m in get_flashed_messages(with_categories=true) %}<div class="flash {{ c }}">{{ m }}</div>{% endfor %}{% block c %}{% endblock %}</main>
+<script>document.querySelectorAll('.menu>a:not([href])').forEach(a=>a.onclick=e=>{e.stopPropagation();const m=a.parentElement,o=m.classList.contains('open');document.querySelectorAll('.menu.open').forEach(x=>x.classList.remove('open'));if(!o)m.classList.add('open')});document.onclick=()=>document.querySelectorAll('.menu.open').forEach(x=>x.classList.remove('open'));
+document.querySelectorAll('input[data-filtro]').forEach(i=>i.oninput=()=>{const q=i.value.toLowerCase();document.querySelectorAll(i.dataset.filtro+' tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')});
+document.querySelectorAll('table.ord').forEach(t=>t.querySelectorAll('thead th').forEach((th,i)=>th.onclick=()=>{const b=t.tBodies[0],d=th.dataset.d=th.dataset.d=='1'?-1:1,v=r=>r.cells[i].textContent.trim(),n=s=>parseFloat(s.replace(/[^0-9.-]/g,''));[...b.rows].sort((a,c)=>(isNaN(n(v(a)))||isNaN(n(v(c)))?v(a).localeCompare(v(c)):n(v(a))-n(v(c)))*d).forEach(r=>b.appendChild(r))}));</script></body></html>

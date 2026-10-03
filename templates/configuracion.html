@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block mainclass %}estrecha{% endblock %}{% block c %}
+<div class="pagehead"><div class="ph-txt"><h1>Empresa y apariencia</h1><p class="sub">Los cambios se aplican a todos los usuarios.</p></div></div>
+<form class="card" method="post">
+<div style="margin-bottom:20px"><h3 style="margin:0 0 14px;font-size:15px;color:var(--marino)">Datos de la empresa</h3>
+<div class="fg"><div><label>Nombre de la empresa</label><input name="empresa" value="{{ EMPRESA }}" style="width:100%"></div><div><label>Símbolo de moneda</label><input name="moneda" value="{{ M }}" style="width:100%"></div></div></div>
+<div style="margin-bottom:20px"><h3 style="margin:0 0 14px;font-size:15px;color:var(--marino)">Apariencia</h3>
+<div class="fg"><div><label>Tema</label><select name="tema" style="width:100%">{% for k, n in TEMAS.items() %}<option value="{{ k }}" {{ 'selected' if k==tema }}>{{ n }}</option>{% endfor %}</select></div></div></div>
+<div style="margin-bottom:20px"><h3 style="margin:0 0 8px;font-size:15px;color:var(--marino)">Notificaciones</h3>
+<p class="sub" style="margin-bottom:12px">Un producto pasa a "Stock bajo" cuando su existencia baja del mínimo.</p>
+<div class="fg" style="margin-bottom:14px"><div><label>Stock mínimo general</label><input name="stock_minimo" value="{{ minimo }}" style="width:100%"></div><div><label>Días estimados para vender un producto</label><input name="dias_estadia" value="{{ dias }}" style="width:100%"></div></div>
+<div style="display:flex;gap:20px;flex-wrap:wrap">{% for k, t in (('bajo','Stock bajo'),('agotado','Agotado'),('negativo','Existencia negativa')) %}<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);cursor:pointer"><input type="checkbox" name="notif_{{ k }}" {{ 'checked' if n[k] }}> {{ t }}</label>{% endfor %}</div></div>
+<button class="btn" style="margin-top:8px">Guardar cambios</button></form>{% endblock %}

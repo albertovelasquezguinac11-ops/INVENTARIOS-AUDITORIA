@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% block c %}
+<div class="pagehead"><div class="ph-txt"><h1>Base de datos</h1><p class="sub">Busca y filtra los datos guardados, arma tablas dinámicas y corrige lo que haga falta. Los cambios que hagas aquí no pasan por las validaciones normales.</p></div><div class="ph-stats"><span><small>Tabla</small><b>{{ t|capitalize }}</b></span><span><small>Filas</small><b>{{ total }}</b></span></div></div>
+<div class="bar">{% for x in tablas %}<a class="btn {{ '' if x==t else 'sec' }}" href="{{ url_for('base', t=x) }}">{{ x|capitalize }}</a>{% endfor %}<a class="btn sec" href="{{ url_for('respaldo') }}" style="margin-left:auto">Descargar copia (.db)</a></div>
+
+<form method="get" id="fb" class="card" style="margin-bottom:16px"><input type="hidden" name="t" value="{{ t }}">
+<h3 style="margin:0 0 12px;font-size:15px">Buscar y filtrar</h3>
+<div class="bar" style="margin-bottom:10px"><input type="search" name="q" value="{{ q }}" placeholder="Buscar en todas las columnas" style="flex:1"></div>
+<div id="filtros">{% for c, o, v in filtros %}<div class="frow"><select name="fc"><option value="">Columna…</option>{% for x in cols %}<option value="{{ x }}" {{ 'selected' if x==c }}>{{ x }}</option>{% endfor %}</select>
+<select name="fo">{% for k, n in OPS.items() %}<option value="{{ k }}" {{ 'selected' if k==o }}>{{ n }}</option>{% endfor %}</select><input name="fv" value="{{ v }}" placeholder="Valor"><button type="button" class="lnk red" onclick="this.parentElement.remove()">Quitar</button></div>{% endfor %}</div>
+<template id="tf"><div class="frow"><select name="fc"><option value="">Columna…</option>{% for x in cols %}<option value="{{ x }}">{{ x }}</option>{% endfor %}</select><select name="fo">{% for k, n in OPS.items() %}<option value="{{ k }}">{{ n }}</option>{% endfor %}</select><input name="fv" placeholder="Valor"><button type="button" class="lnk red" onclick="this.parentElement.remove()">Quitar</button></div></template>
+<div class="quick" style="margin-top:12px"><button class="btn">Buscar</button><button type="button" class="btn sec" onclick="document.getElementById('filtros').appendChild(document.getElementById('tf').content.cloneNode(true))">+ Agregar filtro</button><a class="btn sec" href="{{ url_for('base', t=t) }}">Limpiar</a>
+{% if filas %}<a class="btn sec" href="{{ url_for('base_exportar', fmt='xlsx', **args) }}">Exportar Excel</a><a class="btn sec" href="{{ url_for('base_exportar', fmt='csv', **args) }}">Exportar CSV</a>{% endif %}</div></form>
+
+<div class="card" style="overflow-x:auto;margin-bottom:16px"><table class="ord"><thead><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}{% if t not in ('actividad','ediciones') %}<th></th>{% endif %}</tr></thead><tbody>
+{% for f in filas %}<tr>{% for c in cols %}<td>{{ f[c] if f[c] is not none else '' }}</td>{% endfor %}{% if t not in ('actividad','ediciones') %}<td><button type="button" class="lnk" data-fila='{{ f|tojson }}' onclick="ed(this)">Editar</button>
+<form method="post" action="{{ url_for('base_cambiar', t=t, i=f.id, accion='eliminar') }}" style="display:inline" onsubmit="return confirm('¿Borrar esta fila de forma definitiva?')"><button class="lnk red">Borrar</button></form></td>{% endif %}</tr>
+{% else %}<tr><td colspan="{{ cols|length + 1 }}" class="vacio">No hay filas con esa búsqueda.</td></tr>{% endfor %}</tbody></table>
+<div class="foot"><span>{{ total }} fila{{ 's' if total != 1 }}</span><span>{% if pag>1 %}<a class="lnk" href="{{ url_for('base', pag=pag-1, **args) }}">← Anterior</a>{% endif %}Página {{ pag }} de {{ paginas }}{% if pag<paginas %} <a class="lnk" href="{{ url_for('base', pag=pag+1, **args) }}">Siguiente →</a>{% endif %}</span></div></div>
+
+<div class="card"><h3 style="margin:0 0 4px;font-size:15px">Tabla dinámica de movimientos</h3><p class="sub" style="margin-bottom:12px">Agrupa los movimientos como quieras. Los valores usan el método {{ NOMBRES[metodo] }} (cámbialo arriba a la derecha).</p>
+<div class="fg"><div><label>Filas</label><select name="pf" form="fb" style="width:100%">{% for k, n in DIMS.items() %}<option value="{{ k }}" {{ 'selected' if k==pf }}>{{ n }}</option>{% endfor %}</select></div>
+<div><label>Columnas</label><select name="pc" form="fb" style="width:100%"><option value="">(ninguna)</option>{% for k, n in DIMS.items() %}<option value="{{ k }}" {{ 'selected' if k==pc }}>{{ n }}</option>{% endfor %}</select></div>
+<div><label>Valor</label><select name="pm" form="fb" style="width:100%">{% for k, n in MEDIDAS.items() %}<option value="{{ k }}" {{ 'selected' if k==pm }}>{{ n }}</option>{% endfor %}</select></div>
+<div><label>Operación</label><select name="pfn" form="fb" style="width:100%">{% for k, n in FUNCS.items() %}<option value="{{ k }}" {{ 'selected' if k==fn }}>{{ n }}</option>{% endfor %}</select></div>
+<button class="btn" form="fb">Aplicar</button></div>
+{% if piv.filas %}{% macro f(v) %}{{ '{:,.0f}'.format(v) if piv.entero else '{:,.2f}'.format(v) }}{% endmacro %}
+<div style="overflow-x:auto;margin-top:16px"><table class="piv"><thead><tr><th>{{ DIMS[pf] }}{% if pc %} / {{ DIMS[pc] }}{% endif %}</th>{% for c in piv.cols %}<th class="num">{{ c }}</th>{% endfor %}{% if not piv.sin_col %}<th class="num">Total</th>{% endif %}</tr></thead><tbody>
+{% for x in piv.filas %}<tr><td><b>{{ x }}</b></td>{% for c in piv.cols %}{% set v = piv.celdas.get((x, c)) %}<td class="num" {% if v is not none %}style="background:color-mix(in srgb, var(--azul) {{ ((v|abs)/piv.max*38)|round }}%, transparent)"{% endif %}>{% if v is not none %}{{ f(v) }}{% else %}<span style="color:var(--txt2)">–</span>{% endif %}</td>{% endfor %}{% if not piv.sin_col %}<td class="num"><b>{{ f(piv.tot_f[x]) }}</b></td>{% endif %}</tr>{% endfor %}</tbody>
+<tfoot><tr class="tot"><td>Total</td>{% for c in piv.cols %}<td class="num">{{ f(piv.tot_c[c]) }}</td>{% endfor %}{% if not piv.sin_col %}<td class="num">{{ f(piv.gran) }}</td>{% endif %}</tr></tfoot></table></div>
+{% else %}<div class="vacio">Aún no hay movimientos para armar la tabla.</div>{% endif %}</div>
+
+<dialog id="d" style="width:420px"><form method="post" id="f"><h3>Editar fila</h3><div id="campos"></div><div class="quick" style="margin:0;justify-content:flex-end"><button type="button" class="btn sec" onclick="d.close()">Cancelar</button><button class="btn">Guardar</button></div></form></dialog>
+<script>function ed(b){const o=JSON.parse(b.dataset.fila);f.action='/base/{{ t }}/'+o.id+'/editar';campos.innerHTML=Object.keys(o).filter(k=>k!='id').map(k=>`<label>${k}</label><input name="${k}" value="${o[k]==null?'':String(o[k]).replace(/"/g,'&quot;')}">`).join('');d.showModal()}</script>{% endblock %}

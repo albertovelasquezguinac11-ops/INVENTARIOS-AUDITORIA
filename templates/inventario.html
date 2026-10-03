@@ -1,0 +1,22 @@
+{% extends 'base.html' %}{% block c %}
+<div class="pagehead"><div class="ph-txt"><h1>Inventario</h1><p class="sub">Existencias valuadas con {{ NOMBRES[metodo] }}. Clic en un encabezado para ordenar.</p></div><div class="ph-stats"><span><small>Productos</small><b>{{ inv|length }}</b></span><span><small>Unidades</small><b>{{ '{:,.0f}'.format(cant) }}</b></span><span><small>Valor · {{ NOMBRES[metodo] }}</small><b>{{ M }}{{ '{:,.2f}'.format(total) }}</b></span></div></div>
+<div class="bar"><input type="search" data-filtro="#t" placeholder="Buscar por código o nombre">{% if puede('productos') %}<button class="btn" onclick="ed()">+ Nuevo producto</button>{% endif %}</div>
+<div class="card"><table id="t" class="ord"><thead><tr><th>Código</th><th>Producto</th><th>Unidad</th><th class="num">Cantidad</th><th class="num">Precio</th><th class="num">Total</th><th class="num">Mínimo</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for p in inv %}<tr><td>{{ p.codigo }}</td><td>{{ p.nombre }}</td><td>{{ p.unidad_medida }}</td><td class="num">{{ '{:,.2f}'.format(p.existencia) }}</td><td class="num">{{ M }}{{ '{:,.2f}'.format(p.precio) }}</td><td class="num">{{ M }}{{ '{:,.2f}'.format(p.valor) }}</td><td class="num">{{ '{:g}'.format(p.stock_minimo) }}</td>
+<td><span class="b {{ ESTADO[p.estado][1] }}">{{ ESTADO[p.estado][0] }}</span></td><td><a class="lnk" href="{{ url_for('kardex', pid=p.id) }}">Kardex</a>{% if puede('productos') %}<button class="lnk" data-pid="{{ p.id }}" data-codigo="{{ p.codigo }}" data-nombre="{{ p.nombre }}" data-unidad="{{ p.unidad_medida }}" data-min="{{ p.stock_minimo }}" data-ex="{{ p.existencia }}" data-pr="{{ p.precio }}" onclick="ed(this)">Editar</button>{% endif %}</td></tr>
+{% else %}<tr><td colspan="9" class="vacio">Aún no hay productos.</td></tr>{% endfor %}</tbody>
+<tfoot><tr class="tot"><td colspan="3">Total</td><td class="num">{{ '{:,.2f}'.format(cant) }}</td><td></td><td class="num">{{ M }}{{ '{:,.2f}'.format(total) }}</td><td colspan="3"></td></tr></tfoot></table></div>
+<dialog id="d"><form method="post" action="{{ url_for('producto_guardar') }}"><h3 id="dt"></h3><input type="hidden" name="pid"><input type="hidden" name="ex_orig">
+<label>Código</label><input name="codigo" required><label>Nombre</label><input name="nombre" required>
+<label>Unidad de medida</label><select name="unidad" onchange="nueva()">{% for u in unidades %}<option value="{{ u.nombre }}">{{ u.nombre }}</option>{% endfor %}<option value="__nueva__">+ Añadir nueva unidad…</option></select>
+<input name="unidad_nueva" id="un" placeholder="Nombre de la nueva unidad (ej. frasco)" hidden>
+<label>Stock mínimo (vacío = el general)</label><input name="stock_minimo">
+{% if puede('movimientos') %}<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><label id="lex">Existencia actual</label><input name="existencia" inputmode="decimal"></div><div><label>Costo unitario (Q)</label><input name="costo" inputmode="decimal"></div></div>
+<p id="nota" class="sub" style="margin:0 0 6px;font-size:12px"></p>{% endif %}
+<div class="quick" style="margin:0;justify-content:flex-end"><button type="button" class="btn sec" onclick="d.close()">Cancelar</button><button class="btn">Guardar</button></div></form></dialog>
+<script>function nueva(){const f=d.querySelector('form'),n=f.unidad.value=='__nueva__';un.hidden=!n;un.required=n;if(n)un.focus()}
+function ed(b){const f=d.querySelector('form'),x=b?b.dataset:{},u=x.unidad||'unidad';f.pid.value=x.pid||'';f.codigo.value=x.codigo||'';f.nombre.value=x.nombre||'';
+if(![...f.unidad.options].some(o=>o.value==u)){f.unidad.add(new Option(u,u),0)}f.unidad.value=u;un.hidden=true;un.required=false;un.value='';f.stock_minimo.value=x.min||'';
+if(f.existencia){const ex=b?parseFloat(x.ex):'',pr=b?parseFloat(x.pr):'';f.existencia.value=b?ex:'';f.ex_orig.value=b?ex:'';f.costo.value=(b&&pr>0)?pr:'';
+lex.textContent=b?'Existencia actual':'Existencia inicial (opcional)';nota.textContent=b?'Si cambias la existencia se registra un ajuste (AJ-000N) por la diferencia. El costo se usa solo si agregas unidades; si quitas, se valúa con el método.':'Si pones una cantidad se registra una entrada INI-000N con ese costo.'}
+dt.textContent=b?'Editar producto':'Nuevo producto';d.showModal()}</script>{% endblock %}

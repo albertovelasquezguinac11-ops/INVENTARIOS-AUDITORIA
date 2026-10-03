@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block mainclass %}estrecha{% endblock %}{% block c %}
+<div class="pagehead"><div class="ph-txt"><h1>Importar</h1><p class="sub">Sube un archivo o escribe lo que pasó con tus propias palabras. No hace falta plantilla ni títulos: antes de guardar nada verás lo que entendí para que lo revises.</p></div></div>
+<form class="card" method="post" enctype="multipart/form-data">
+<label class="drop-zone" id="dz" for="arch" style="display:block;cursor:pointer"><b id="dzt" style="font-size:15px">Arrastra tu archivo aquí o haz clic para elegirlo</b><br><small id="dzs" style="color:var(--txt2)">Excel, CSV, TXT, Word, PDF o una foto</small>
+<input type="file" id="arch" name="archivo" hidden accept=".xlsx,.xls,.csv,.txt,.pdf,.docx,.png,.jpg,.jpeg,.bmp,.webp,.tiff"></label>
+<div style="margin:12px 0 4px">{% for e in ('XLSX','XLS','CSV','TXT','DOCX','PDF','JPG','PNG') %}<span class="chip">{{ e }}</span>{% endfor %}</div>
+<div style="text-align:center;color:var(--txt2);font-size:12px;margin:14px 0 8px">o escribe / pega texto libre</div>
+<textarea name="texto" id="txt" rows="5" style="width:100%;font-size:13px" placeholder="Ejemplos:&#10;El 5 de septiembre se vendieron 20 unidades de cuaderno&#10;Compré 50 lápices a Q2.50 el 3/9&#10;Ayer salieron 10 mochilas&#10;Recibimos 100 borradores a Q1.25 el 2026-09-01"></textarea>
+<div class="fg" style="margin-top:16px;grid-template-columns:repeat(3,1fr);align-items:start">
+<div><b style="font-size:13px;color:var(--marino)">1. Lo analizo</b><p class="sub" style="margin:2px 0 0">Detecto fechas, entradas y salidas, productos, cantidades y precios, aunque cambie el orden o no haya encabezados.</p></div>
+<div><b style="font-size:13px;color:var(--marino)">2. Lo revisas</b><p class="sub" style="margin:2px 0 0">Te muestro un resumen, avisos y cada fila. Cambias columnas, corriges celdas y desmarcas lo que no quieras.</p></div>
+<div><b style="font-size:13px;color:var(--marino)">3. Importas</b><p class="sub" style="margin:2px 0 0">Solo se guardan las filas válidas que marcaste. El precio solo cuenta en entradas; las salidas se valúan solas.</p></div></div>
+<div class="quick"><button class="btn" id="go" disabled>Analizar</button></div></form>
+<script>const dz=document.getElementById('dz'),arch=document.getElementById('arch'),txt=document.getElementById('txt'),go=document.getElementById('go');
+function ok(){go.disabled=!(arch.files.length||txt.value.trim())}
+function sel(){const f=arch.files[0];if(f){document.getElementById('dzt').textContent=f.name;document.getElementById('dzs').textContent=(f.size/1024).toFixed(0)+' KB · listo para analizar'}ok()}
+arch.onchange=sel;txt.oninput=ok;['dragenter','dragover'].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',ev=>{arch.files=ev.dataTransfer.files;sel()})</script>{% endblock %}

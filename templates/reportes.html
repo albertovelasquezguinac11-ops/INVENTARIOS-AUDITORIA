@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% block c %}
+<div class="pagehead"><div class="ph-txt"><h1>Reportes</h1><p class="sub">{% if r == 'estado' %}Costo de ventas e inventario final con los tres métodos, lado a lado.{% else %}Elige el reporte, qué información graficar y cómo verla. Método: {{ NOMBRES[metodo] }}.{% endif %}</p></div><div class="ph-stats">{% for etq, val in resumen %}<span><small>{{ etq }}</small><b>{{ val }}</b></span>{% endfor %}</div></div>
+<div class="rep-cards noprint">{% for k, n in REPORTES.items() %}<a href="{{ url_for('reportes', r=k, desde=ini, hasta=fin, pid=pid or '') }}" class="rep-card {{ 'active' if k==r }}">{{ n }}</a>{% endfor %}</div>
+<div class="card noprint" style="margin-bottom:16px;padding:14px 18px"><form class="fg" method="get"><input type="hidden" name="r" value="{{ r }}">
+<div><label>Desde</label><input type="date" name="desde" value="{{ ini }}" style="width:100%"></div><div><label>Hasta</label><input type="date" name="hasta" value="{{ fin }}" style="width:100%"></div>
+<div><label>Producto</label><select name="pid" style="width:100%"><option value="">Todos</option>{% for p in prods %}<option value="{{ p.id }}" {{ 'selected' if p.id==pid }}>{{ p.nombre }}</option>{% endfor %}</select></div>
+{% if r != 'estado' %}<div><label>Información a graficar</label><select name="info" style="width:100%" onchange="this.form.submit()">{% for k, v in met.items() %}<option value="{{ k }}" {{ 'selected' if k==info }}>{{ v[0] }}</option>{% endfor %}</select></div>
+<div><label>Cómo verla</label><select name="g" style="width:100%" onchange="this.form.submit()">{% for k, n in TIPOS.items() %}<option value="{{ k }}" {{ 'selected' if k==g }}>{{ n }}</option>{% endfor %}</select></div>{% endif %}
+<button class="btn">Generar</button></form></div>
+
+{% if r == 'estado' %}
+<div class="est-grid">{% for k in ORDEN %}{% set e = est[k] %}<div class="card est"><h3>Estado de resultado · {{ NOMBRES[k] }}</h3>
+<div class="est-row"><span>Inventario inicial</span><b>{{ M }}{{ '{:,.2f}'.format(e.ini_v) }}</b></div>
+<div class="est-row"><span>(+) Compras</span><b>{{ M }}{{ '{:,.2f}'.format(e.com_v) }}</b></div>
+<div class="est-row sub-t"><span>Costo de mercadería para la venta</span><b>{{ M }}{{ '{:,.2f}'.format(e.disp_v) }}</b></div>
+<div class="est-row"><span>(-) Inventario final</span><b>({{ M }}{{ '{:,.2f}'.format(e.fin_v) }})</b></div>
+<div class="est-row total"><span>Costo de ventas</span><b>{{ M }}{{ '{:,.2f}'.format(e.ven_v) }}</b></div>
+<h4>Integración de las unidades en existencia</h4>
+<div class="est-row"><span>Total de unidades</span><b>{{ '{:,.2f}'.format(e.disp_c) }}</b></div>
+<div class="est-row"><span>Unidades vendidas</span><b>{{ '{:,.2f}'.format(e.ven_c) }}</b></div>
+<div class="est-row total"><span>Unidades en existencia</span><b>{{ '{:,.2f}'.format(e.fin_c) }}</b></div></div>{% endfor %}</div>
+<div class="chart-card" style="margin:16px 0"><div class="cc-head"><div><span class="cc-title">Cómo cambia el resultado según el método</span><span class="ah-pill">Barras</span></div><div class="cc-stats">{% for k in ORDEN %}<span><small>{{ NOMBRES[k] }}</small><b>{{ M }}{{ '{:,.2f}'.format(est[k].ven_v) }}</b></span>{% endfor %}</div></div>{{ g_est }}</div>
+{% elif g != 'ninguno' and grafico %}<div class="chart-card" style="margin-bottom:16px"><div class="cc-head"><div><span class="cc-title">{{ gtitulo }}</span><span class="ah-pill">{{ TIPOS[g] }}</span></div><div class="cc-stats">{% for e, v in gstats %}<span><small>{{ e }}</small><b>{{ v }}</b></span>{% endfor %}</div></div>{{ grafico }}</div>{% endif %}
+
+<div class="card" style="overflow-x:auto">{% if rows %}<div class="ph"><h3>{{ REPORTES[r] }}</h3><span style="font-size:13px;color:var(--txt2)">{{ rows|length }} {{ 'conceptos' if r == 'estado' else 'registros' }}</span></div>
+<table class="ord"><thead><tr>{% for h in enc %}<th {{ 'class=num' if rows and rows[0][loop.index0] is number }}>{{ h }}</th>{% endfor %}</tr></thead><tbody>{% for x in rows %}<tr>{% for v in x %}<td {{ 'class=num' if v is number }}>{% if v is float %}{{ '{:,.2f}'.format(v) }}{% else %}{{ v }}{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody>
+{% if r != 'estado' %}<tfoot><tr class="tot"><td colspan="{{ enc|length - 1 }}">Total</td><td class="num">{{ M }}{{ '{:,.2f}'.format(total) }}</td></tr></tfoot>{% endif %}</table>{% else %}<div class="vacio">No hay datos con esos filtros.</div>{% endif %}</div>
+{% if rows %}<div class="export-bar noprint"><span>Exportar</span>{% if puede('exportar') %}{% for f, n in (('xlsx','Excel'),('pdf','PDF'),('csv','CSV'),('txt','TXT')) %}<a class="btn sec" href="{{ url_for('reportes_exportar', fmt=f, r=r, desde=ini, hasta=fin, pid=pid or '') }}">{{ n }}</a>{% endfor %}{% endif %}<button class="btn sec" onclick="print()">Imprimir</button></div>{% endif %}
+{% endblock %}

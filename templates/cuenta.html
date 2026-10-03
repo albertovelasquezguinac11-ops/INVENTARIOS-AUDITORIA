@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block mainclass %}estrecha{% endblock %}{% block c %}
+<div class="pagehead"><div class="ph-txt"><h1>Seguridad</h1><p class="sub">Cambia tu contraseña de acceso.</p></div></div>
+<form class="card" method="post"><label>Contraseña actual</label><input type="password" name="actual" required style="width:100%;margin-bottom:12px"><label>Nueva contraseña</label><input type="password" name="nueva" required style="width:100%;margin-bottom:12px">
+<label>Confirmar nueva contraseña</label><input type="password" name="confirmar" required style="width:100%;margin-bottom:14px"><button class="btn">Cambiar contraseña</button></form>{% endblock %}
